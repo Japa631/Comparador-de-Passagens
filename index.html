@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Comparador de Passagens — Europa</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;line-height:1.4;background:#f6f7fb;color:#111;margin:0;padding:20px}
+    .container{max-width:900px;margin:0 auto;background:#fff;border-radius:10px;padding:20px;box-shadow:0 6px 22px rgba(20,20,40,.06)}
+    h1{margin:0 0 6px;font-size:22px}
+    p.lead{margin:0 0 12px;color:#555}
+    label{display:block;font-size:13px;margin-top:10px}
+    input,select{width:100%;padding:8px;margin-top:6px;border:1px solid #ddd;border-radius:6px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .grid .full{grid-column:1/-1}
+    button{background:#0f1724;color:#fff;padding:10px 12px;border-radius:8px;border:0;cursor:pointer}
+    button.secondary{background:#fff;color:#0f1724;border:1px solid #ddd}
+    .links{margin-top:16px;display:grid;gap:8px}
+    .provider{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;border:1px solid #eee;background:#fbfdff}
+    .provider b{display:block}
+    .note{font-size:13px;color:#666;margin-top:12px}
+    footer{margin-top:16px;font-size:12px;color:#888}
+    .small{font-size:12px;color:#666;word-break:break-all}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Comparador de Passagens (Europa)</h1>
+    <p class="lead">Preencha origem, destino e datas — o site gera links prontos para companhias confiáveis já em português e com preços em euro (€).</p>
+
+    <form id="searchForm">
+      <div class="grid">
+        <div>
+          <label for="origin">Origem (IATA ou cidade)</label>
+          <input id="origin" type="text" placeholder="Ex: LIS ou Lisboa">
+        </div>
+        <div>
+          <label for="destination">Destino (IATA ou cidade)</label>
+          <input id="destination" type="text" placeholder="Ex: MAD ou Madrid">
+        </div>
+        <div>
+          <label for="departDate">Data de Ida</label>
+          <input id="departDate" type="date">
+        </div>
+
+        <div>
+          <label for="returnDate">Data de Volta (opcional)</label>
+          <input id="returnDate" type="date">
+        </div>
+        <div>
+          <label for="adults">Passageiros</label>
+          <select id="adults"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+        </div>
+        <div>
+          <label for="cabin">Classe</label>
+          <select id="cabin"><option value="economy">Econômica</option><option value="business">Executiva</option></select>
+        </div>
+
+        <div class="full" style="margin-top:8px">
+          <button id="generate">Gerar links</button>
+          <button id="openAll" type="button" class="secondary" style="margin-left:8px">Abrir todos</button>
+          <button id="clear" type="button" class="secondary" style="margin-left:8px">Limpar</button>
+        </div>
+      </div>
+    </form>
+
+    <div id="results" class="links"></div>
+
+    <p class="note">💡 Use <b>códigos IATA</b> (ex: LIS, MAD, LON) para resultados mais precisos. Este site não mostra preços diretamente — apenas gera links prontos em português e moeda euro (€).</p>
+
+    <footer>
+      <div class="small">Feito para facilitar suas buscas — sites confiáveis selecionados.</div>
+    </footer>
+  </main>
+
+  <script>
+    function e(v){return encodeURIComponent((v||"").trim())}
+    function fmtDate(d){return d?d:'';}
+
+    function buildLinks({origin,destination,departDate,returnDate,adults,cabin}){
+      const o=e(origin), d=e(destination), dd=fmtDate(departDate), rd=fmtDate(returnDate), a=e(adults), c=e(cabin);
+      const urls = [
+        // Comparador
+        {name:'Skyscanner', url:`https://www.skyscanner.net/transport/flights/${o}/${d}/${dd}/${rd}?adults=${a}&cabinclass=${c}&currency=EUR&locale=pt-PT`},
+        // Companhias aéreas confiáveis
+        {name:'Ryanair', url:`https://www.ryanair.com/pt/pt/trip/flights/select?adults=${a}&originIata=${o}&destinationIata=${d}&dateOut=${dd}${rd?`&dateIn=${rd}`:''}&currency=EUR&locale=pt-PT`},
+        {name:'TAP Air Portugal', url:`https://www.flytap.com/pt-br/flights?adt=${a}&from=${o}&to=${d}&outboundDate=${dd}${rd?`&inboundDate=${rd}`:''}&currency=EUR&locale=pt-PT`},
+        {name:'Iberia', url:`https://www.iberia.com/pt/booking/availability?market=PT&language=pt&from=${o}&to=${d}&departureDate=${dd}${rd?`&returnDate=${rd}`:''}&adults=${a}&currency=EUR`},
+        {name:'Omio', url:`https://www.omio.com/search/${o}/${d}/${dd}?travelMode=flight&adults=${a}&currency=EUR&locale=pt-PT`}
+      ];
+      return urls;
+    }
+
+    const form=document.getElementById('searchForm');
+    const results=document.getElementById('results');
+    const btnOpenAll=document.getElementById('openAll');
+    const btnClear=document.getElementById('clear');
+
+    form.addEventListener('submit',function(ev){
+      ev.preventDefault();
+      const origin=document.getElementById('origin').value;
+      const destination=document.getElementById('destination').value;
+      const departDate=document.getElementById('departDate').value;
+      const returnDate=document.getElementById('returnDate').value;
+      const adults=document.getElementById('adults').value;
+      const cabin=document.getElementById('cabin').value;
+      if(!origin||!destination||!departDate){alert('Preencha Origem, Destino e Data de Ida.');return;}
+      const links=buildLinks({origin,destination,departDate,returnDate,adults,cabin});
+      results.innerHTML='';
+      links.forEach(l=>{
+        const div=document.createElement('div');div.className='provider';
+        const left=document.createElement('div');left.innerHTML=`<b>${l.name}</b><div class="small">${l.url}</div>`;
+        const right=document.createElement('div');
+        const a=document.createElement('a');a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Abrir';a.style.marginRight='8px';
+        const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar URL';copy.className='secondary';
+        copy.addEventListener('click',()=>{navigator.clipboard.writeText(l.url).then(()=>alert('URL copiada!'))});
+        right.appendChild(a);right.appendChild(copy);
+        div.appendChild(left);div.appendChild(right);
+        results.appendChild(div);
+      });
+    });
+
+    btnOpenAll.addEventListener('click',()=>{
+      const origin=document.getElementById('origin').value;
+      const destination=document.getElementById('destination').value;
+      const departDate=document.getElementById('departDate').value;
+      if(!origin||!destination||!departDate){alert('Preencha Origem, Destino e Data de Ida.');return;}
+      const returnDate=document.getElementById('returnDate').value;
+      const adults=document.getElementById('adults').value;
+      const cabin=document.getElementById('cabin').value;
+      const links=buildLinks({origin,destination,departDate,returnDate,adults,cabin});
+      links.forEach(l=>{window.open(l.url,'_blank');});
+    });
+
+    btnClear.addEventListener('click',()=>{
+      document.getElementById('origin').value='';
+      document.getElementById('destination').value='';
+      document.getElementById('departDate').value='';
+      document.getElementById('returnDate').value='';
+      document.getElementById('adults').value='1';
+      document.getElementById('cabin').value='economy';
+      results.innerHTML='';
+    });
+  </script>
+</body>
+</html>
